@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Калькулятор на Go</title>
+</head>
+<body>
+  <h1>Калькулятор на Go</h1>
+  <form method="GET" action="/">
+    <input type="text" name="a" placeholder="Первое число" required>
+    <select name="op">
+      <option value="+">+</option>
+      <option value="-">-</option>
+      <option value="*">*</option>
+      <option value="/">/</option>
+      <option value="^">^</option>
+    </select>
+    <input type="text" name="b" placeholder="Второе число" required>
+    <button type="submit">Вычислить</button>
+  </form>
+  {{if .Result}}
+    <h2>Результат: {{.Result}}</h2>
+  {{end}}
+  {{if .Error}}
+    <h2 style="color:maroon;">Ошибка: {{.Error}}</h2>
+  {{end}}
+</body>
+</html>
