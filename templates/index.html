@@ -18,11 +18,16 @@
     <input type="text" name="b" placeholder="Второе число" required>
     <button type="submit">Вычислить</button>
   </form>
+
   {{if .Result}}
     <h2>Результат: {{.Result}}</h2>
   {{end}}
   {{if .Error}}
     <h2 style="color:maroon;">Ошибка: {{.Error}}</h2>
   {{end}}
+
+  <form method="GET" action="/shutdown">
+    <button type="submit">Выход</button>
+  </form>
 </body>
 </html>
