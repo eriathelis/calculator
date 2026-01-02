@@ -61,7 +61,7 @@ func shutdownHandler(w http.ResponseWriter, r *http.Request) {
   <html lang="ru">
   <head><meta charset="UTF-8"><title>Сервер остановлен</title></head>
   <body>
-   <h2>Сервер остановлен/.</h2>
+   <h2>Сервер остановлен.</h2>
    <p>Можно закрыть вкладку браузера.</p>
   </body>
   </html>
