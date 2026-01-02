@@ -1,67 +1,93 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 )
 
-// Шаблон загружаем один раз при старте (если файл отсутствует — программа упадёт и мы увидим ошибку сразу)
+// Шаблон загружаем один раз при старте
 var tmpl = template.Must(template.ParseFiles("templates/index.html"))
 
-// Структура данных, которую мы передаём в шаблон
+// Структура для передачи данных в шаблон
 type PageData struct {
 	Result string
 	Error  string
 }
 
-// handler обрабатывает запросы к корню сайта "/"
+// Глобальная переменная для сервера
+var srv *http.Server
+
+// Основной обработчик формы калькулятора
 func handler(w http.ResponseWriter, r *http.Request) {
-	// Получаем параметры из URL: ?a=...&op=...&b=...
 	aStr := r.URL.Query().Get("a")
 	bStr := r.URL.Query().Get("b")
 	op := r.URL.Query().Get("op")
 
-	// Подготовим структуру для шаблона
 	data := PageData{}
 
-	// Если какие-то параметры не заданы — просто отрисуем страницу без результата
-	if aStr == "" || bStr == "" || op == "" {
-		tmpl.Execute(w, data)
-		return
-	}
+	if aStr != "" && bStr != "" && op != "" {
+		a, err1 := strconv.ParseFloat(aStr, 64)
+		b, err2 := strconv.ParseFloat(bStr, 64)
 
-	// Пытаемся превратить строки в числа
-	a, err1 := strconv.ParseFloat(aStr, 64)
-	b, err2 := strconv.ParseFloat(bStr, 64)
-	if err1 != nil || err2 != nil {
-		data.Error = "Некорректные числа"
-		tmpl.Execute(w, data)
-		return
-	}
-
-	// Вызываем логику калькулятора (в calc.go)
-	result, err := calculate(a, b, op)
-	if err != nil {
-		data.Error = err.Error()
-	} else {
-		// Красивый вывод: если число целое — без дробной части, иначе — с двумя знаками
-		if result == math.Trunc(result) {
-			data.Result = fmt.Sprintf("%.0f", result)
+		if err1 != nil || err2 != nil {
+			data.Error = "Некорректные числа"
 		} else {
-			data.Result = fmt.Sprintf("%.2f", result)
+			result, err := calculate(a, b, op)
+			if err != nil {
+				data.Error = err.Error()
+			} else {
+				if result == math.Trunc(result) {
+					data.Result = fmt.Sprintf("%.0f", result)
+				} else {
+					data.Result = fmt.Sprintf("%.2f", result)
+				}
+			}
 		}
 	}
 
-	// Отдаём шаблон с данными
 	tmpl.Execute(w, data)
 }
 
-// Функция для запуска сервера (вызывается из main.go)
+// Обработчик кнопки "Выход"
+func shutdownHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintln(w, `
+  <!DOCTYPE html>
+  <html lang="ru">
+  <head><meta charset="UTF-8"><title>Сервер остановлен</title></head>
+  <body>
+   <h2>Сервер остановлен/.</h2>
+   <p>Можно закрыть вкладку браузера.</p>
+  </body>
+  </html>
+ `)
+
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		if err := srv.Shutdown(context.Background()); err != nil {
+			fmt.Println("Ошибка при остановке сервера:", err)
+		}
+	}()
+}
+
+// Запуск сервера
 func StartServer() {
-	http.HandleFunc("/", handler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", handler)
+	mux.HandleFunc("/shutdown", shutdownHandler)
+
+	srv = &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
 	fmt.Println("Сервер запущен на http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		fmt.Println("Ошибка сервера:", err)
+	}
 }
