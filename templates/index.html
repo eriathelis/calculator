@@ -26,10 +26,12 @@
     <h2 style="color:maroon;">Ошибка: {{.Error}}</h2>
   {{end}}
 
+  {{if .IsLocal}}
   <div style="margin-top: 20px;">
     <form method="GET" action="/shutdown">
       <button type="submit">Выход</button>
     </form>
   </div>
+  {{end}}
 </body>
 </html>
